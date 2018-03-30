@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Directories
+build/
+
+# OSX Finder
+.DS_store
