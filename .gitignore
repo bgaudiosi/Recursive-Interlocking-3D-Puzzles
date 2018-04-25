@@ -38,4 +38,4 @@ build/
 .DS_store
 
 *.swp
-*.h.swp
+*.swo
