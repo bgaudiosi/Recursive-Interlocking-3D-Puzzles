@@ -33,11 +33,27 @@ int generateMtl( std::string filename, uint8_t num_colors) {
         green.clear();
         blue.str("");
         blue.clear();
-
-        red_num = ((double) std::rand() / (RAND_MAX));
-        green_num =((double) std::rand() / (RAND_MAX));
-        blue_num = ((double) std::rand() / (RAND_MAX));
-
+        if (i == 0) {
+            red_num = 0.0;
+            green_num = 255.0;
+            blue_num = 0.0;
+        } else if (i == 1) {
+            red_num = 255.0;
+            green_num = 0.0;
+            blue_num = 0.0;
+        } else if (i == 2) {
+            red_num = 126.0;
+            green_num = 126.0;
+            blue_num = 0.0;
+        } else if (i == 3) {
+            red_num = 126.0;
+            green_num = 0.0;
+            blue_num = 126.0;           
+        } else {
+            red_num = ((double) std::rand() / (RAND_MAX));
+            green_num =((double) std::rand() / (RAND_MAX));
+            blue_num = ((double) std::rand() / (RAND_MAX));
+        }
         red   << std::fixed << std::setprecision(6) << red_num;
         green << std::fixed << std::setprecision(6) << green_num;
         blue  << std::fixed << std::setprecision(6) << blue_num;
@@ -88,6 +104,9 @@ int generateObj(std::string filename, CompFab::VoxelGrid * voxel_list, uint8_t n
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
     int nz = voxel_list->m_dimZ;
+    
+    // for separating pieces
+    double offset = 0.95;
 
     uint32_t count = 1;
     unsigned int p;

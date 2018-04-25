@@ -36,3 +36,6 @@ build/
 
 # OSX Finder
 .DS_store
+
+*.swp
+*.h.swp
