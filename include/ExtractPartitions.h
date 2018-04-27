@@ -79,7 +79,7 @@ bool verifyPiece( CompFab::VoxelGrid * voxel_list, std::vector<Voxel> piece);
 Voxel findNormalDirection( CompFab::VoxelGrid * voxel_list, Voxel voxel, std::vector<Voxel> piece);
 std::vector<Voxel> findCandidateSeeds(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> piece, Voxel perpendicular);
 std::vector<Voxel> seedSorter(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> seeds, std::vector<Voxel> piece);
-std::vector<Voxel> createInitialPiece(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> prevPiece, std::vector<Voxel> candidates);
+std::vector<Voxel> createInitialPiece(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> prevPiece, std::vector<Voxel> candidates, int * index);
 std::vector<Voxel> ensureInterlocking(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> prevPiece, std::vector<Voxel> currentPiece, int prevPieceId, Voxel prevNormal, std::vector<Voxel> * theAnchors);
 std::vector<Voxel> bfsTwo(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, Voxel seed, Voxel toBlock, Voxel normal, int nb_one, int nb_two, Voxel * anchor, std::vector<Voxel> anchorList);
 std::vector<Voxel> ensurePieceConnectivity(CompFab::VoxelGrid * voxel_list, std::vector<Voxel> piece, Voxel normal);

@@ -49,7 +49,27 @@ int generateMtl( std::string filename, uint8_t num_colors) {
             red_num = 126.0;
             green_num = 0.0;
             blue_num = 126.0;           
-        } else {
+        } else if (i == 4) {
+            red_num = 0.0;
+            green_num = 0.0;
+            blue_num = 255.0;           
+        }else if (i == 5) {
+            red_num = 0.0;
+            green_num = 126.0;
+            blue_num = 126.0;           
+        }/*else if (i == 6) {
+            red_num = 200.0;
+            green_num = 100.0;
+            blue_num = 34.0;           
+        }else if (i == 7) {
+            red_num = 91.0;
+            green_num = 44.0;
+            blue_num = 111.0;           
+        }else if (i == 8) {
+            red_num = 22.0;
+            green_num = 100.0;
+            blue_num = 133.0;           
+        }*/else {
             red_num = ((double) std::rand() / (RAND_MAX));
             green_num =((double) std::rand() / (RAND_MAX));
             blue_num = ((double) std::rand() / (RAND_MAX));
@@ -106,8 +126,8 @@ int generateObj(std::string filename, CompFab::VoxelGrid * voxel_list, uint8_t n
     int nz = voxel_list->m_dimZ;
     
     // for separating pieces
-    double offset = 0.95;
-
+    double tolerance = 0.01;
+    int counter = 0;
     uint32_t count = 1;
     unsigned int p;
     for (int current_part = 1; current_part <= num_partitions; current_part++) {
@@ -130,13 +150,39 @@ int generateObj(std::string filename, CompFab::VoxelGrid * voxel_list, uint8_t n
                         next_j.clear();
                         next_k.str("");
                         next_k.clear();
-
-                        first_i << std::fixed << std::setprecision(6) << (double)(i * scale);
-                        next_i << std::fixed << std::setprecision(6) << (double)((i + 1) * scale);
-                        first_j << std::fixed << std::setprecision(6) << (double)(j * scale);
-                        next_j << std::fixed << std::setprecision(6) << (double)((j + 1) * scale);
-                        first_k << std::fixed << std::setprecision(6) << (double)(k * scale);
-                        next_k << std::fixed << std::setprecision(6) << (double)((k + 1) * scale);
+                        
+                        counter++;
+                        // Add tolerances
+                        if (i > 0 && voxel_list->isInside(i-1, j, k) != (p+1) && voxel_list->isInside(i-1, j, k) != 0) {
+                            first_i << std::fixed << std::setprecision(6) << (double)(i * scale * (1 + tolerance) );
+                        } else {
+                            first_i << std::fixed << std::setprecision(6) << (double)(i * scale);
+                        }
+                        if (i < nx-1 && voxel_list->isInside(i+1, j, k) != (p+1) && voxel_list->isInside(i+1, j, k) != 0) {
+                            next_i << std::fixed << std::setprecision(6) << (double)((i + 1) * scale * ( 1- tolerance) );
+                        } else {
+                            next_i << std::fixed << std::setprecision(6) << (double)((i + 1) * scale);
+                        }
+                        if (j > 0 && voxel_list->isInside(i, j-1, k) != (p+1) && voxel_list->isInside(i, j-1, k) != 0) {
+                            first_j << std::fixed << std::setprecision(6) << (double)(j * scale * ( 1 + tolerance) );
+                        } else {
+                            first_j << std::fixed << std::setprecision(6) << (double)(j * scale);
+                        }
+                        if (j < ny-1 && voxel_list->isInside(i, j+1, k) != (p+1) && voxel_list->isInside(i, j+1, k) != 0) {
+                            next_j << std::fixed << std::setprecision(6) << (double)((j + 1) * scale * ( 1 - tolerance) );
+                        } else {
+                            next_j << std::fixed << std::setprecision(6) << (double)((j + 1) * scale);
+                        }
+                        if (k > 0 && voxel_list->isInside(i, j, k-1) != (p+1) && voxel_list->isInside(i, j, k-1) != 0) {
+                             first_k << std::fixed << std::setprecision(6) << (double)(k * scale * ( 1 + tolerance));
+                        } else {
+                            first_k << std::fixed << std::setprecision(6) << (double)(k * scale);
+                        }
+                        if (k < nz-1 && voxel_list->isInside(i, j, k+1) != (p+1) && voxel_list->isInside(i, j, k+1) != 0) {
+                             next_k << std::fixed << std::setprecision(6) << (double)((k + 1) * scale * ( 1 - tolerance));
+                        } else {
+                            next_k << std::fixed << std::setprecision(6) << (double)((k + 1) * scale);
+                        }
 
                         partition_vectors[p].append("v " + first_i.str() + " " + first_j.str() + " " + first_k.str() + "\n");
                         partition_vectors[p].append("v " + first_i.str() + " " + next_j.str() + " " + first_k.str() + "\n");
@@ -148,6 +194,20 @@ int generateObj(std::string filename, CompFab::VoxelGrid * voxel_list, uint8_t n
                         partition_vectors[p].append("v " + next_i.str() + " " + next_j.str() + " " + next_k.str() + "\n");
 
                         // Add faces
+                        /*
+                        if ((i > 0 && voxel_list->isInside(i-1, j, k) != (p+1) && voxel_list->isInside(i-1, j, k) != 0)) {
+                        }
+                        if ((i < nx-1 && voxel_list->isInside(i+1, j, k) != (p+1) && voxel_list->isInside(i+1, j, k) != 0)) {
+                        }
+                        if ((j > 0 && voxel_list->isInside(i, j-1, k) != (p+1) && voxel_list->isInside(i, j-1, k) != 0)) {
+                        }
+                        if ((j < ny-1 && voxel_list->isInside(i, j+1, k) != (p+1) && voxel_list->isInside(i, j+1, k) != 0)) {
+                        }
+                        if ((k > 0 && voxel_list->isInside(i, j, k-1) != (p+1) && voxel_list->isInside(i, j, k-1) != 0)) {
+                        }
+                        if ((k < nz-1 && voxel_list->isInside(i, j, k+1) != (p+1) && voxel_list->isInside(i, j, k+1) != 0)) {
+                        } 
+                        */
                         partition_faces[p].append("f " + std::to_string(count + 4) + "//" + "1 " +
                                                          std::to_string(count + 6) + "//" + "1 " +
                                                          std::to_string(count + 7) + "//" + "1" + "\n");

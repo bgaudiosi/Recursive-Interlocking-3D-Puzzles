@@ -8,6 +8,8 @@
 #include "../include/ExtractPartitions.h"
 #include "../include/CompFab.h"
 
+bool debug = true;
+
 Voxel::Voxel() {
     x = 0;
     y = 0;
@@ -288,7 +290,9 @@ std::vector<VoxelPair> bfs(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * 
             }
         }
     }
-    std::cout << "in bfs, went through: " << count << std::endl;
+    if (debug) {
+        std::cout << "in bfs, went through: " << count << std::endl;
+    }
 
     std::sort (potentials.begin(), potentials.end(), accessSort);
     std::vector<VoxelPair> accessible;
@@ -300,7 +304,12 @@ std::vector<VoxelPair> bfs(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * 
 }
 
 std::vector<Voxel> shortestPath(CompFab::VoxelGrid * voxel_list, Voxel seed, VoxelPair goal, std::vector<Voxel> anchors, Voxel direction) {
-    //std::cout << "finding path to voxel " << goal.toString() << std::endl;
+    if (debug) {
+        std::cout << "in shortestPath" << std::endl;
+        std::cout << "the seed is " << seed.toString() << std::endl;
+        std::cout << "the goal is" << goal.toString() << std::endl;
+        std::cout << "\tdirection of removal is " << direction.toString() << std::endl;
+    }
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
     int nz = voxel_list->m_dimZ;
@@ -312,7 +321,6 @@ std::vector<Voxel> shortestPath(CompFab::VoxelGrid * voxel_list, Voxel seed, Vox
     for(unsigned int i=0; i<size; ++i) {
         visited[i] = false;
     }
-    std::cout << "\tdirection of removal is " << direction.toString() << std::endl;
     // Create a queue for BFS
     std::list<std::vector<Voxel>> queue;
     std::vector<Voxel> neighbors;
@@ -333,7 +341,9 @@ std::vector<Voxel> shortestPath(CompFab::VoxelGrid * voxel_list, Voxel seed, Vox
     Voxel end = blocker;
     Voxel neg_dir(direction.x*-1, direction.y*-1, direction.z*-1);
     while (end.x < nx && end.x > -1 && end.y > -1 && end.y < ny && end.z > -1 && end.z < nz) {
-        std::cout << "\tsetting " << end.toString() << " to visited" <<std::endl;
+        if (debug) {
+            std::cout << "\tsetting " << end.toString() << " to visited" <<std::endl;
+        }
         visited[end.z*(nx*ny) + end.y*ny + end.x] = true;
         end += neg_dir;
     }
@@ -342,7 +352,6 @@ std::vector<Voxel> shortestPath(CompFab::VoxelGrid * voxel_list, Voxel seed, Vox
     for (int i = 0; i < anchors.size(); i++) {
         end = anchors[i];
         while (end.x < nx && end.x > -1 && end.y > -1 && end.y < ny && end.z > -1 && end.z < nz) {
-            std::cout << "\tsetting " << end.toString() << " to visited bc in anchors" <<std::endl;
             visited[end.z*(nx*ny) + end.y*ny + end.x] = true;
             end += neg_dir;
         }
@@ -359,6 +368,10 @@ std::vector<Voxel> shortestPath(CompFab::VoxelGrid * voxel_list, Voxel seed, Vox
          
         queue.pop_front();
         neighbors = getNeighbors(current.back(), voxel_list);
+        if (debug) {
+            std::cout << "neighbors of " << current.back().toString() << ": " << std::endl;
+            printList(neighbors);
+        }
         for (int i = 0; i < neighbors.size(); i++) {
             if ( !visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] ) {
                 visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] = true;
@@ -368,8 +381,10 @@ std::vector<Voxel> shortestPath(CompFab::VoxelGrid * voxel_list, Voxel seed, Vox
             }
         }
     }
-    std::cout << "initial path is" << std::endl;
-    printList(shortest_path);
+    if (debug) {
+        std::cout << "initial path is" << std::endl;
+        printList(shortest_path);
+    }
     // add things in the direction
     for (int i = 0; i < shortest_path.size(); i++) {
         end = Voxel(shortest_path[i].x, shortest_path[i].y, shortest_path[i].z);
@@ -382,9 +397,12 @@ std::vector<Voxel> shortestPath(CompFab::VoxelGrid * voxel_list, Voxel seed, Vox
             end += direction;
         }
     }
-    
+    if (debug) {
+        std::cout << "final path:" << std::endl;
+        printList(final_path);
+    }
     // Now... make sure that piece is connected after adding things. Otherwise need more path finding.
-    //nextPiece = ensurePieceConnectivity(voxel_list, final_path, direction);
+    //final_path = ensurePieceConnectivity(voxel_list, final_path, direction);
     
     return final_path;
 }
@@ -397,9 +415,7 @@ std::vector<Voxel> findAnchors(CompFab::VoxelGrid * voxel_list, Voxel seed, Voxe
 
     if ( normal_one.x != -1 && normal_two.x != -1) {
         for (int i = 0; i < seed.x; i++) {
-            std::cout << Voxel(i, seed.y, seed.z).toString() << std::endl;
             if (voxel_list->isInside(i, seed.y, seed.z) == 1) {
-                std::cout << "anchored" << std::endl;
                 //check connectivity
                 anchors.push_back(Voxel(i, seed.y, seed.z));
                 break;
@@ -408,9 +424,7 @@ std::vector<Voxel> findAnchors(CompFab::VoxelGrid * voxel_list, Voxel seed, Voxe
     }
     if ( normal_one.x != 1 && normal_two.x != 1) {
         for (int i = nx-1; i > seed.x; i--) {
-            std::cout << Voxel(i, seed.y, seed.z).toString() << std::endl;
             if (voxel_list->isInside(i, seed.y, seed.z) == 1) {
-                std::cout << "anchored" << std::endl;
                 //check connectivity
                 anchors.push_back(Voxel(i, seed.y, seed.z));
                 break;
@@ -458,15 +472,19 @@ std::vector<Voxel> findAnchors(CompFab::VoxelGrid * voxel_list, Voxel seed, Voxe
 
 std::vector<Voxel> filterKey(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, Voxel seed, 
                             std::vector<VoxelPair> candidates, Voxel normal_one, Voxel normal_two, int * index) {
+    if (debug) {
+        std::cout << "in filterKey" << std::endl;
+    }
     std::vector<Voxel> chosen_path;
     std::vector<Voxel> path;
     std::vector<Voxel> anchors = findAnchors(voxel_list, seed, normal_one, normal_two);
     double sum;
     double max_score = std::numeric_limits<double>::max();
     for (int i = 0; i<candidates.size(); i++) {
-        std::cout << "finding path to " << candidates[i].blockee.toString() << ", blocker is " << candidates[i].blocker.toString() << std::endl;
+        if (debug) {
+            std::cout << "finding path to " << candidates[i].blockee.toString() << ", blocker is " << candidates[i].blocker.toString() << std::endl;
+        }
         path = shortestPath(voxel_list, seed, candidates[i], anchors, Voxel(0, 0, 1));
-        printList(path);
         sum = 0;
         for (int j = 0; j < path.size(); j++) {
             sum += scores->score(path[j].x, path[j].y, path[j].z);
@@ -502,7 +520,9 @@ Voxel finalAnchor(CompFab::VoxelGrid * voxel_list, Voxel seed, VoxelPair blocks,
 }
 
 std::vector<Voxel> expandPiece( CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> key, std::vector<Voxel> anchors, int num_voxels, Voxel normal) {
-    std::cout << "in expandPiece" << std::endl;
+    if (debug) {
+        std::cout << "in expandPiece" << std::endl;
+    }
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
     int nz = voxel_list->m_dimZ;
@@ -538,6 +558,7 @@ std::vector<Voxel> expandPiece( CompFab::VoxelGrid * voxel_list, AccessibilityGr
     std::vector<double> access_sums;
     double B = -2.0;
     int choice = -1;
+    std::vector<Voxel> tempPiece;
     while (count < num_voxels) {
         for (int i = 0; i< key.size(); i++) {
             neighbors = getNeighbors(key[i], voxel_list);
@@ -554,18 +575,24 @@ std::vector<Voxel> expandPiece( CompFab::VoxelGrid * voxel_list, AccessibilityGr
         }
         // Get score of candidate additions
         for (int i = 0; i < candidates.size(); i++) {
+            tempPiece.clear();
             visited[candidates[i].z*nx*ny + candidates[i].y*ny + candidates[i].x] = false;
             sum = 0;
             total = count;
-
+            
             // generalize to all
             end = candidates[i];
             while (end.x < nx && end.x > -1 && end.y > -1 && end.y < ny && end.z > -1 && end.z < nz) {
                if ((voxel_list->isInside(end.x, end.y, end.z) == 1) && (!visited[end.z*nx*ny + end.y*ny + end.x] )) {
-                    total++;
-                    sum += scores->score(end.x, end.y, end.z);
+                   tempPiece.push_back(end);
+                   total++;
+                   //sum += scores->score(end.x, end.y, end.z);
                 } 
                 end += normal;
+            }
+            tempPiece = ensurePieceConnectivity(voxel_list, tempPiece, normal);
+            for (int j = 0; j < tempPiece.size(); j++) {
+                sum += scores->score(tempPiece[j].x, tempPiece[j].y, tempPiece[j].z);
             }
 
             if (total > num_voxels) {
@@ -615,12 +642,17 @@ std::vector<Voxel> expandPiece( CompFab::VoxelGrid * voxel_list, AccessibilityGr
         probabilities.clear();
         count = key.size();
     }
-    std::cout << "added " << std::to_string(key.size() - initial_count) << " voxels. Piece size is now " << std::to_string(key.size()) <<  std::endl;
-    printList(key);
+    if (debug) {
+        std::cout << "added " << std::to_string(key.size() - initial_count) << " voxels. Piece size is now " << std::to_string(key.size()) <<  std::endl;
+        printList(key);
+    }
     return key;
 }
 
 bool verifyPiece( CompFab::VoxelGrid * voxel_list, std::vector<Voxel> piece) {
+    if (debug) {
+        std::cout << "in verifyPiece" << std::endl;
+    }
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
     int nz = voxel_list->m_dimZ;
@@ -628,31 +660,17 @@ bool verifyPiece( CompFab::VoxelGrid * voxel_list, std::vector<Voxel> piece) {
         
 
     bool *visited = new bool[grid_size];
+    bool *inPiece = new bool[grid_size];
     for(unsigned int i=0; i<grid_size; ++i) {
+        inPiece[i] = false;
         visited[i] = false;
     }
     
     for (int i = 0; i < piece.size(); i++) {
+        inPiece[i] = true;
         visited[piece[i].z*nx*ny + piece[i].y*ny + piece[i].x] = true;
     }
-
-    // Get pieces next to key
-    std::vector<Voxel> Rs;
-    std::vector<Voxel> neighbors;
-    for (int i = 0; i< piece.size(); i++) {
-        neighbors = getNeighbors(piece[i], voxel_list);
-        for (int j = 0; j < neighbors.size(); j++) {
-            if ( !visited[neighbors[j].z*nx*ny + neighbors[j].y*ny + neighbors[j].x] ) {
-                visited[neighbors[j].z*nx*ny + neighbors[j].y*ny + neighbors[j].x] = true;
-                Rs.push_back(neighbors[j]);
-            }
-        }
-    }
-    // Reset vistited status
-    for (int i = 0; i < Rs.size(); i++) {
-        visited[Rs[i].z*nx*ny + Rs[i].y*ny + Rs[i].x] = false;
-    }
-
+    
     // Find voxel to start bfs from
     int x = -1;
     int y = -1;
@@ -679,6 +697,7 @@ bool verifyPiece( CompFab::VoxelGrid * voxel_list, std::vector<Voxel> piece) {
     // Now, run bfs
     Voxel current;
     std::list<Voxel> queue;
+    std::vector<Voxel> neighbors;
     visited[z*(nx*ny) + y*ny + x] = true;
     queue.push_back(Voxel(x, y, z));
     while (!queue.empty()) {
@@ -692,18 +711,26 @@ bool verifyPiece( CompFab::VoxelGrid * voxel_list, std::vector<Voxel> piece) {
             }
         }
     }
-    // Finally, make sure everything in Rs was visited
-    for (int i = 0; i < Rs.size(); i++) {
-        if (!visited[Rs[i].z*ny*nx + Rs[i].y*ny + Rs[i].x]) {
-            std::cout<< "bad voxel is " << Rs[i].toString() << "for i = " << std::to_string(i) << std::endl;
-            return false;
+    bool result = true;
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            for (int k = 0; k < nz; k++) {
+                if (voxel_list->isInside(i,j,k) == 1 && !visited[k*(ny*nx) + j*ny + i] ) {
+                    if (debug) {
+                        std::cout << "piece could not be verfied due to " << Voxel(i,j,k).toString() << std::endl;
+                    }
+                    result = false;
+                }
+             }
         }
     }
-    return true;
+    return result;
 }
 
 Voxel findNormalDirection( CompFab::VoxelGrid * voxel_list, Voxel voxel, std::vector<Voxel> piece) {
-    std::cout << "in findNormalDirection" << std::endl;
+    if (debug) {
+        std::cout << "in findNormalDirection" << std::endl;
+    }
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
     int nz = voxel_list->m_dimZ;
@@ -740,7 +767,9 @@ Voxel findNormalDirection( CompFab::VoxelGrid * voxel_list, Voxel voxel, std::ve
 bool voxelSortSorter(VoxelSort i, VoxelSort j) { return (i.score < j.score); }
 
 std::vector<Voxel> seedSorter(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> seeds, std::vector<Voxel> piece) {
-    std::cout << "in seedSorter" << std::endl;
+    if (debug) {
+        std::cout << "in seedSorter" << std::endl;
+    }
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
     int nz = voxel_list->m_dimZ;
@@ -801,7 +830,9 @@ std::vector<Voxel> seedSorter(CompFab::VoxelGrid * voxel_list, AccessibilityGrid
 }
 
 std::vector<Voxel> findCandidateSeeds(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> piece, Voxel perpendicular) {
-    std::cout << "in findCandidateSeeds" << std::endl;
+    if (debug) {
+        std::cout << "in findCandidateSeeds" << std::endl;
+    }
     std::vector<Voxel> neighbors;
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
@@ -885,13 +916,26 @@ std::vector<Voxel> findCandidateSeeds(CompFab::VoxelGrid * voxel_list, Accessibi
         for (int i = 0; i < 10 && i < sorted.size(); i++) {
             topX.push_back(sorted[i]);
         }
+        
+        if (debug) {
+            std::cout << "candidate seeds are: " << std::endl;
+            printList(topX);
+        }
         return topX;
     } else {
+        if (debug) {
+            std::cout << "candidate seeds are: " << std::endl;
+            printList(neighbors);
+        }
         return neighbors;
     }
 }
 
 std::vector<Voxel> shortestPathTwo(CompFab::VoxelGrid * voxel_list, Voxel start, Voxel goal) {
+    if (debug) {
+        std::cout << "in shortestPathTwo" << std::endl;
+        std::cout << "start is " << start.toString() << ", goal is " << goal.toString() << std::endl;
+    }
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
     int nz = voxel_list->m_dimZ;
@@ -937,8 +981,10 @@ std::vector<Voxel> shortestPathTwo(CompFab::VoxelGrid * voxel_list, Voxel start,
     return shortest_path;
 }
 
-std::vector<Voxel> createInitialPiece(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> prevPiece, std::vector<Voxel> candidates) {
-    std::cout << "in createInitialPiece" << std::endl;
+std::vector<Voxel> createInitialPiece(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> prevPiece, std::vector<Voxel> candidates, int * index) {
+    if (debug) {
+        std::cout << "in createInitialPiece" << std::endl;
+    }
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
     int nz = voxel_list->m_dimZ;
@@ -996,7 +1042,12 @@ std::vector<Voxel> createInitialPiece(CompFab::VoxelGrid * voxel_list, Accessibi
         for (int j = 0; j < toRemove.size(); j++) {
             shortestPath = shortestPathTwo(voxel_list, candidates[i], toRemove[j]);
             //std::cout << "\tpath to " << toRemove[j].toString() << " is: " << std::endl;
-            printList(shortestPath);
+            if (shortestPath.size() == 0) {
+                std::cout << "Something went wrong" << std::endl;
+            }
+            if (debug) {
+                printList(shortestPath);
+            }
             // add all voxels in normal direction
             for (int k = 0; k < shortestPath.size(); k++) {
                 end = shortestPath[k];
@@ -1034,15 +1085,21 @@ std::vector<Voxel> createInitialPiece(CompFab::VoxelGrid * voxel_list, Accessibi
             //std::cout << "\t\t\tsetting bestChoice with current score =" << std::to_string(currentScore) <<  std::endl;
             bestScore = currentScore;
             bestChoice = currentChoice;
+            *index = i;
         }
     }
-    std::cout << "best choice is:" << std::endl;
-    //printList(bestChoice);
+    
+    if (debug) {
+        std::cout << "best choice is:" << std::endl;
+        printList(bestChoice);
+    }
     return bestChoice;
 }
 
 std::vector<Voxel>  bfsTwo(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, Voxel seed, Voxel toBlock, Voxel normal, int nb_one, int nb_two, Voxel * anchor, std::vector<Voxel> anchorList){
-    std::cout << "in bfsTwo" << std::endl;
+    if (debug) {
+        std::cout << "in bfsTwo" << std::endl;
+    }
     std::vector<VoxelPair> potentials;
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
@@ -1070,7 +1127,6 @@ std::vector<Voxel>  bfsTwo(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * 
         count++;
         blockee = queue.front();
         blocker = blockee + toBlock;
-        //blocker = blockee + Voxel(toBlock.x*-1, toBlock.y*-1, toBlock.z*-1);
         if (blocker.x < 0 || blocker.x >= nx || blocker.y < 0 || blocker.y >= ny || blocker.z < 0 || blocker.z >= nz) {
             ;
         } else if (voxel_list->isInside(blocker.x, blocker.y, blocker.z) == 1 && blocker != seed) {
@@ -1085,12 +1141,16 @@ std::vector<Voxel>  bfsTwo(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * 
             }
         }
     }
-    std::cout << "in bfsTwo, went through: " << count << std::endl;
+    if (debug) {
+        std::cout << "in bfsTwo, went through: " << count << std::endl;
+    }
 
     std::sort (potentials.begin(), potentials.end(), accessSort);
     std::vector<VoxelPair> accessible;
-    for (int i = 0; i< potentials.size() && nb_two < potentials.size(); i++) {
-        std::cout << "\t" << potentials[i].toString() << " could block" << std::endl;
+    for (int i = 0; i< potentials.size() && nb_two < accessible.size(); i++) {
+        if (debug) {
+            std::cout << "\t" << potentials[i].toString() << " could block" << std::endl;
+        }
         accessible.push_back(potentials[i]);
     }
     std::vector<Voxel> currentPiece;
@@ -1098,9 +1158,54 @@ std::vector<Voxel>  bfsTwo(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * 
     double currentScore;
     double bestScore = std::numeric_limits<double>::max();
     Voxel bestBlocker;
+
+    Voxel current;
+    bool skip;
     for (int i = 0; i < accessible.size(); i++) {
         currentPiece = shortestPath(voxel_list, seed, accessible[i], anchorList, normal);
-        std::cout<< "path from " << seed.toString() << " to " << accessible[i].blockee.toString() << std::endl;
+        if (debug) {
+            std::cout<< "path from " << seed.toString() << " to " << accessible[i].blockee.toString() << std::endl;
+        }
+
+        // Verify that the blocker isn't isolated, i.e. that it can access rest of puzzle not through the piece
+        for(unsigned int j=0; j<size; ++j) {
+            visited[j] = false;
+        }
+        for (int j = 0; j < currentPiece.size(); j++) {
+            visited[ currentPiece[j].z*(ny*nx) + currentPiece[j].y*ny + currentPiece[j].x ] = true;
+        }
+        queue.clear();
+        queue.push_back(accessible[i].blocker);
+        while (!queue.empty()) {
+            current = queue.front();
+            queue.pop_front();
+            neighbors = getNeighbors(current, voxel_list);
+            for (int k = 0; k < neighbors.size(); k++) {
+                if ( !visited[ neighbors[k].z*(nx*ny) + neighbors[k].y*ny + neighbors[k].x ] ) {
+                    visited[ neighbors[k].z*(nx*ny) + neighbors[k].y*ny + neighbors[k].x ] = true;
+                    queue.push_back(neighbors[k]);
+                }
+            }
+        }
+
+        // Finally, make sure everything in puzzle was visited
+        skip = false;
+        for (int x = 0; x < nx; x++) {
+            for (int y = 0; y < ny; y++) {
+                for (int z = 0; z < nz; z++) {
+                    if ((voxel_list->isInside(x, y, z) == 1) && !visited[z*(ny*nx) + y*ny + x]) {
+                        skip = true;
+                        if (debug) {
+                            std::cout << "bad blocker is " << accessible[i].blocker.toString() << std::endl;
+                        }
+                     }
+                }
+            }
+        }
+        
+        if (skip) continue;
+
+
         //printList(currentPiece);
         if (currentPiece.size() == 0) {
             std::cout << "Could not find path?" << std::endl;
@@ -1117,15 +1222,20 @@ std::vector<Voxel>  bfsTwo(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * 
             bestBlocker = accessible[i].blocker;
         }
     }
-    std::cout << "returning: " << std::endl;
-    printList(bestPiece);
+    if (debug) {
+        std::cout << "returning: " << std::endl;
+        printList(bestPiece);
+    }
     *anchor = bestBlocker;
     return bestPiece;
 }
 
 std::vector<Voxel> mobilityCheck(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> prevPiece, std::vector<Voxel> currentPiece, int prevPieceId, Voxel dir, Voxel normal, Voxel prevNormal, Voxel * anchor, std::vector<Voxel> anchorList) {
+    if (debug) {
+        std::cout << "checking mobility in dir " << dir.toString() << std::endl;
+    }
     int count = currentPiece.size();
-    std::cout << "checking mobility in dir " << dir.toString() << std::endl;
+    
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
     int nz = voxel_list->m_dimZ;
@@ -1183,18 +1293,26 @@ std::vector<Voxel> mobilityCheck(CompFab::VoxelGrid * voxel_list, AccessibilityG
         }
     }
     if (currentPiece.size() == count) {
-        std::cout << "no change" << std::endl;
+        if (debug) { 
+            std::cout << "no change" << std::endl;
+        }
     } else {
-        std::cout << "twas change" << std::endl;
+        if (debug) {
+            std::cout << "twas change" << std::endl;
+        }
     }
     return currentPiece;
 }
 
 std::vector<Voxel> ensureInterlocking(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> prevPiece, std::vector<Voxel> currentPiece, int prevPieceId, Voxel prevNormal, std::vector<Voxel> * theAnchors) {
-
+    if (debug) {
+        std::cout << "in ensureInterlocking" << std::endl;
+    }
     Voxel normal = findNormalDirection( voxel_list, currentPiece[0], prevPiece);
     Voxel dir;
-    std::cout << "normal for this whole piece starting at" << currentPiece[0].toString() << " is " << normal.toString() << std::endl;
+    if (debug) {
+        std::cout << "normal for this whole piece starting at" << currentPiece[0].toString() << " is " << normal.toString() << std::endl;
+    }
     // Perform mobility check in each of the other 5 directions
     Voxel anchor;
     std::vector<Voxel> anchorList;
@@ -1249,6 +1367,10 @@ std::vector<Voxel> ensureInterlocking(CompFab::VoxelGrid * voxel_list, Accessibi
 }
 
 std::vector<Voxel> shortestPathThree(CompFab::VoxelGrid * voxel_list, Voxel start, std::vector<Voxel> goals) {
+    if (debug) {
+        std::cout << "in shortestPathThree" << std::endl;
+        std::cout << "starting from " << start.toString() << std::endl;
+    }
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
     int nz = voxel_list->m_dimZ;
@@ -1267,7 +1389,7 @@ std::vector<Voxel> shortestPathThree(CompFab::VoxelGrid * voxel_list, Voxel star
     for (int i = 0; i < goals.size(); i++) {
         piece[goals[i].z*(ny*nx) + goals[i].y*ny + goals[i].x] = true;
     }
-
+    piece[start.z*(nx*ny) + start.y*ny + start.x] = false;
 
     std::list<std::vector<Voxel>> queue;
     std::vector<Voxel> neighbors;
@@ -1307,7 +1429,17 @@ std::vector<Voxel> shortestPathThree(CompFab::VoxelGrid * voxel_list, Voxel star
 }
 
 std::vector<Voxel> ensurePieceConnectivity(CompFab::VoxelGrid * voxel_list, std::vector<Voxel> piece, Voxel normal) {
+    
     /* ENSURE CONNECTIVITY AMONGST VOXELS IN THE PIECE */
+    if (debug) {
+        std::cout << "in ensurePieceConnectivity" << std::endl;
+        std::cout << "piece is: " << std::endl;
+        printList(piece);
+    }
+    if (piece.size() == 0) {
+        return piece;
+    }
+
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
     int nz = voxel_list->m_dimZ;
@@ -1315,73 +1447,114 @@ std::vector<Voxel> ensurePieceConnectivity(CompFab::VoxelGrid * voxel_list, std:
 
     bool *visited = new bool[size];
     bool *inPiece = new bool[size];
-    for(unsigned int i=0; i<size; ++i) {
-        visited[i] = false;
-        inPiece[i] = false;
-    }
-    for (int i = 0; i < piece.size(); i++) {
-        inPiece[piece[i].z*(ny*nx) + piece[i].y*ny + piece[i].x] = true;
-    }
+    bool connected = false;
+
     std::list<Voxel> newQueue;
     Voxel start = piece[0];
     Voxel current;
-    //Mark the current node as visited and enqueue it
-    visited[start.z*(nx*ny) + start.y*ny + start.x] = true;
-    newQueue.push_back(start);
+    bool in;
+    Voxel end;
+    std::vector<Voxel> path;
     std::vector<Voxel> neighbors;
-    while ( !newQueue.empty() ) {
-        current = newQueue.front();
+    std::vector<Voxel> disconnected;
+    //while (!connected) {
+        for(unsigned int i=0; i<size; ++i) {
+            visited[i] = false;
+            inPiece[i] = false;
+        }
+        for (int i = 0; i < piece.size(); i++) {
+            inPiece[piece[i].z*(ny*nx) + piece[i].y*ny + piece[i].x] = true;
+        }
+        newQueue.clear();
+        
+        //Mark the current node as visited and enqueue it
+        visited[start.z*(nx*ny) + start.y*ny + start.x] = true;
+        newQueue.push_back(start);
+        if (debug) {
+            std::cout << "checking connection" << std::endl;
+        }
+        while ( !newQueue.empty() ) {
+            current = newQueue.front();
 
-        newQueue.pop_front();
-        neighbors = getNeighbors(current, voxel_list);
-        std::cout << "current is " << current.toString() << ", it's neighbors are:" << std::endl;
-        printList(neighbors);
-        for (int i = 0; i < neighbors.size(); i++) {
-            if ( !visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] && inPiece[neighbors[i].z*(ny*nx) + neighbors[i].y*ny + neighbors[i].x]  ) {
-                std::cout << "REACHED " << neighbors[i].toString() << " FROM " << current.toString() << std::endl;
-                visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] = true;
-                newQueue.push_back(neighbors[i]);
+            newQueue.pop_front();
+            neighbors = getNeighbors(current, voxel_list);
+            if (debug) {
+                std::cout << "current is " << current.toString() << ", it's neighbors are:" << std::endl;
+                printList(neighbors);
+            }
+
+            for (int i = 0; i < neighbors.size(); i++) {
+                if ( !visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] && inPiece[neighbors[i].z*(ny*nx) + neighbors[i].y*ny + neighbors[i].x]  ) {
+                    if (debug) {
+                        std::cout << "REACHED " << neighbors[i].toString() << " FROM " << current.toString() << std::endl;
+                    }
+                    visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] = true;
+                    newQueue.push_back(neighbors[i]);
+                }
             }
         }
-    }
-    // okay so now make sure that all pieces have been visited
-    std::vector<Voxel> disconnected;
-    for (int i = 0; i < piece.size(); i++) {
-        if (!visited[piece[i].z*(ny*nx) + piece[i].y*ny + piece[i].x]) {
-            disconnected.push_back(piece[i]);
-        } else {
-            std::cout << "visited " << piece[i].toString() << " somewhere" << std::endl;
+        if (debug) {
+            std::cout << "thru there" << std::endl;
+        }
+        // okay so now make sure that all pieces have been visited
+        disconnected.clear();
+        for (int i = 0; i < piece.size(); i++) {
+            if (!visited[piece[i].z*(ny*nx) + piece[i].y*ny + piece[i].x]) {
+                disconnected.push_back(piece[i]);
+            } else {
+                if (debug) {
+                    std::cout << "visited " << piece[i].toString() << " somewhere" << std::endl;
+                }
+            }
+
         }
 
-    }
-    std::vector<Voxel> path;
-    Voxel end;
-    bool in;
-    for (int i = 0; i < disconnected.size(); i++) {
-        std::cout << "\tdelinquent:" <<  start.toString() << ", path is (starting from " << disconnected[i].toString()<< "):" << std::endl;
-        path = shortestPathThree(voxel_list, disconnected[i], piece);
-        printList(path);
-        for (int j = 0; j < path.size(); j++) {
-            end = path[i];
-            end += normal;
-            while (end.x < nx && end.x > -1 && end.y > -1 && end.y < ny && end.z > -1 && end.z < nz) {
-                if ( voxel_list->isInside(end.x, end.y, end.z) == 1) {
-                    in = false;
-                    for (int k = 0; k < piece.size(); k++) {
-                        if (piece[k] == end) {
-                            in = true;
+        // GUCCI
+        if (disconnected.size() == 0) {
+            connected = true;
+        }
+        
+        if (debug) {
+            std::cout << "now, finding paths " << std::endl;
+        }
+        path.clear();
+        for (int i = 0; i < disconnected.size(); i++) {
+            if (debug) {
+                std::cout << "\tdelinquent:" <<  start.toString() << ", path is (starting from " << disconnected[i].toString()<< "):" << std::endl;
+            }
+            path = shortestPathThree(voxel_list, disconnected[i], piece);
+            if (debug) {
+                printList(path);
+            }
+            for (int j = 0; j < path.size(); j++) {
+                end = path[j];
+                end += normal;
+                while (end.x < nx && end.x > -1 && end.y > -1 && end.y < ny && end.z > -1 && end.z < nz) {
+                    if ( voxel_list->isInside(end.x, end.y, end.z) == 1) {
+                        in = false;
+                        for (int k = 0; k < piece.size(); k++) {
+                            if (piece[k] == end) {
+                                in = true;
+                            }
+                        }
+                        if (!in) {
+                            if (debug) {
+                                std::cout << "adding to piece " << end.toString() << std::endl;
+                            }
+                            piece.push_back(end);
+                        } else {
+                            if (debug) {
+                                std::cout << end.toString() << " is already in" << std::endl;
+                            }
                         }
                     }
-                    if (!in) {
-                        std::cout << "adding to piece " << end.toString() << std::endl;
-                        piece.push_back(end);
-                    } else {
-                        std::cout << end.toString() << " is already in" << std::endl;
-                    }
+                    end += normal;
                 }
-                end += normal;
-            }
-        }   
+            }   
+        }
+    //}
+    if (debug) {
+        std::cout << "escaped ensurePieceConnectivity" << std::endl;
     }
     return piece;
 }
