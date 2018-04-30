@@ -1,3 +1,11 @@
+/**
+    CS591-W1 Final Project
+    ExtractPartitions.cpp
+    Purpose: For generating the partitions of a given voxel list
+
+    @author Ben Gaudiosi
+    @version 1.0 5/01/2018 
+*/
 #include <iostream>
 #include <vector>
 #include <string>
@@ -10,41 +18,82 @@
 
 bool debug = true;
 
+/**
+    Blank constructor for the Voxel class. Generates a voxel at the origin.
+*/
 Voxel::Voxel() {
     x = 0;
     y = 0;
     z = 0;
 }
 
+/** 
+    Constructor for the Voxel class.
+
+    @param x The x coordinate of the voxel.
+    @param y The y coordinate of the voxel.
+    @param z The z coordinate of the voxel.
+*/
 Voxel::Voxel(int x_val, int y_val, int z_val) {
     x = x_val;
     y = y_val;
     z = z_val;
 }
 
-VoxelPair::VoxelPair(Voxel blocker_vox, double blocker_score, Voxel blockee_vox, double blockee_score) {
-    blocker = blocker_vox;
-    blocker_accessibility = blocker_score;
-    blockee = blockee_vox;
-    blockee_accessibility = blockee_score;
+/**
+    Constructor for the VoxelPair class.
+
+    @param blockerVox The blocker voxel.
+    @param blockerScore The accessibility score of the blocker voxel.
+    @param blockeeVox The blockee voxel.
+    @param blockeeScore The accessibility score of the blockee voxel.
+
+*/
+VoxelPair::VoxelPair(Voxel blockerVox, double blockerScore, Voxel blockeeVox, double blockeeScore) {
+    blocker = blockerVox;
+    blocker_accessibility = blockerScore;
+    blockee = blockeeVox;
+    blockee_accessibility = blockeeScore;
 }
 
-VoxelSort::VoxelSort(Voxel vox, double total_score) {
+/**
+    Constructor for the VoxelSort class.
+
+    @param vox The voxel to be sorted.
+    @param totalScore The score of the voxel in this class.
+*/
+VoxelSort::VoxelSort(Voxel vox, double totalScore) {
     voxel = vox;
-    score = total_score;
+    score = totalScore;
 }
 
-std::string VoxelPair::toString() {
-    return "(" + blocker.toString() + ":" + std::to_string(blocker_accessibility)  + " ," + blockee.toString() + ": " + std::to_string(blockee_accessibility) + ")";
-}
+/**
+    String representation of the voxel class.
 
-
+    @return A human readable string of a voxel as (x, y, z).
+*/
 std::string Voxel::toString() {
     std::string vox("(" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(z) + ")");
     return vox;
 }
 
-//Grid structure for Voxels
+/**
+    String representation of the VoxelPair class.
+
+    @return A human readable string of a VoxelPair as (x1, y1, z1): score, (x2, y2, z2): score
+*/
+std::string VoxelPair::toString() {
+    return "(" + blocker.toString() + ":" + std::to_string(blocker_accessibility)  + " ," + blockee.toString() + ": " + std::to_string(blockee_accessibility) + ")";
+}
+
+/**
+    Constructor for the AccessibilityStruct class.
+    
+    @param lowerLeft A vector representing the lower left voxel in the grid. Usually is (0,0,0).
+    @param dimX The dimension of x.
+    @param dimY The dimension of y.
+    @param dimZ The dimension of z.
+*/
 AccessibilityStruct::AccessibilityStruct(CompFab::Vec3 lowerLeft, unsigned int dimX, unsigned int dimY, unsigned int dimZ) {
     m_lowerLeft = lowerLeft;
     m_dimX = dimX;
@@ -52,7 +101,6 @@ AccessibilityStruct::AccessibilityStruct(CompFab::Vec3 lowerLeft, unsigned int d
     m_dimZ = dimZ;
     m_size = dimX*dimY*dimZ;
 
-    //Allocate Memory
     m_scoreArray = new double[m_size];
 
     for(unsigned int i=0; i<m_size; ++i)
@@ -62,17 +110,31 @@ AccessibilityStruct::AccessibilityStruct(CompFab::Vec3 lowerLeft, unsigned int d
 
 }
 
+/**
+    Destructor for the AccessibilityStruct class.
+*/
 AccessibilityStruct::~AccessibilityStruct()
 {
     delete[] m_scoreArray;
 }
 
+/**
+    Prints a list of voxels.
+
+    @param list The list of voxels to be printed.
+*/
 void printList(std::vector<Voxel> list) {
     for (int i = 0; i < list.size(); i++) {
         std::cout << "\t\t" << list[i].toString() << std::endl;
     }
 }
 
+/**
+    Finds seeds for the key piece to start from.
+
+    @param voxel_list A VoxelGrid from which to generate the puzzle.
+    @return A list of potential seeds for the key piece
+*/
 std::vector<Voxel> findSeeds( CompFab::VoxelGrid * voxel_list ) {
     std::vector<Voxel> seeds;
 
@@ -130,6 +192,13 @@ std::vector<Voxel> findSeeds( CompFab::VoxelGrid * voxel_list ) {
     return seeds;
 }
 
+/**
+    Finds the neighbors of a voxel.
+
+    @param voxel The voxel from which to find neighbors.
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @return The neighbors of the voxel.
+*/
 std::vector<Voxel> getNeighbors(Voxel voxel, CompFab::VoxelGrid * voxel_list) {
     std::vector<Voxel> neighbors;
     int nx = voxel_list->m_dimX;
@@ -169,6 +238,14 @@ std::vector<Voxel> getNeighbors(Voxel voxel, CompFab::VoxelGrid * voxel_list) {
     return neighbors;
 }
 
+/**
+    Finds the accessibility scores of a VoxelGrid.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param alpha A double used as a param for how to generate the scores.
+    @param recurse How many layers of recursion to perform in score generation.
+    @return The accessiblity scores of each voxel in the form of an AccessibilityGrid.
+*/
 AccessibilityGrid * accessibilityScores( CompFab::VoxelGrid * voxel_list, double alpha, unsigned int recurse) {
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
@@ -206,6 +283,14 @@ AccessibilityGrid * accessibilityScores( CompFab::VoxelGrid * voxel_list, double
     return scores;
 }
 
+/**
+    Finds the direction of the exposed face of the key piece that isn't bad_normal.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param voxel The seed voxel.
+    @param bad_normal The direction which the key is going to be removed from.
+    @return The direction of the exposed face of the piece that isn't bad_normal.
+*/
 Voxel findNormal( CompFab::VoxelGrid * voxel_list, Voxel voxel, Voxel bad_normal) {
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
@@ -245,8 +330,26 @@ Voxel findNormal( CompFab::VoxelGrid * voxel_list, Voxel voxel, Voxel bad_normal
     return Voxel(0,0,0);
 }
 
+/**
+    A sorting function for std::sort for the VoxelPair class.
+
+    @param i One of the VoxelPair being compared.
+    @param j One of the VoxelPair being compared.
+    @return true if i's blockee has a lower accessibility score than j's, false otherwise.
+*/
 bool accessSort(VoxelPair i, VoxelPair j) { return (i.blockee_accessibility < j.blockee_accessibility); }
 
+/**
+    Performs breadth first search to find potential voxels to block removal in the specified direction.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param scores An AccessibilityStruct representing the current accesibility scores of the puzzle.
+    @param seed The seed voxel for the key piece.
+    @param bad_normal The direction which is being blocked.
+    @param nb_one The limit of VoxelPairs to find to block removal.
+    @param nb_two How many VoxelPairs to return after a sorting.
+    @return The top nb_two VoxelPairs to block removal in direction bad_direction.
+*/
 std::vector<VoxelPair> bfs(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, Voxel seed, Voxel bad_normal, int nb_one, int nb_two) {
     std::vector<VoxelPair> potentials;
     int nx = voxel_list->m_dimX;
@@ -303,6 +406,16 @@ std::vector<VoxelPair> bfs(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * 
     return accessible;
 }
 
+/**
+    Uses breadth first search to find the shortest path from the seed to the blockee voxel specficied.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param seed The seed voxel from which the search starts.
+    @param goal The VoxelPair who's blockee voxel we're searching for.
+    @param anchors A list of forbidden voxels to ensure interlocking.
+    @param direction The direction which the piece is being removed.
+    @return The shortest path from seed to goal.blockee including all other pieces that must be included to ensure removability.
+*/
 std::vector<Voxel> shortestPath(CompFab::VoxelGrid * voxel_list, Voxel seed, VoxelPair goal, std::vector<Voxel> anchors, Voxel direction) {
     if (debug) {
         std::cout << "in shortestPath" << std::endl;
@@ -407,6 +520,15 @@ std::vector<Voxel> shortestPath(CompFab::VoxelGrid * voxel_list, Voxel seed, Vox
     return final_path;
 }
 
+/**
+    Finds the anchor voxels for the key piece.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param seed The chosen seed voxel.
+    @param normal_one The direction from which the piece is exposed, though cannot be removed.
+    @param normal_two The direction from which the piece is being removed.
+    @return A list of forbidden anchor voxels which search algorithms should not be allowed to access.
+*/
 std::vector<Voxel> findAnchors(CompFab::VoxelGrid * voxel_list, Voxel seed, Voxel normal_one, Voxel normal_two) {
     std::vector<Voxel> anchors;
     int nx = voxel_list->m_dimX;
@@ -470,6 +592,18 @@ std::vector<Voxel> findAnchors(CompFab::VoxelGrid * voxel_list, Voxel seed, Voxe
     return anchors;
 }
 
+/**
+    Takes possible routes to block the key in direction normal_one and chooses the best.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param scores An AccessibilityStruct representing the current accesibility scores of the puzzle.
+    @param seed The chosen seed of the key.
+    @param candidates Potential VoxelPairs to block the key.
+    @param normal_one The direction from which to block the key.
+    @param normal_two The direction from which the piece will be removed.
+    @param index An integer pointer which gets set to the index of the chosen candidate.
+    @return The path from the seed to the chosen VoxelPair blockee, which is now the key.
+*/
 std::vector<Voxel> filterKey(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, Voxel seed, 
                             std::vector<VoxelPair> candidates, Voxel normal_one, Voxel normal_two, int * index) {
     if (debug) {
@@ -497,7 +631,15 @@ std::vector<Voxel> filterKey(CompFab::VoxelGrid * voxel_list, AccessibilityGrid 
     return chosen_path;
 }
 
-// this time we want voxel in direction normal
+/**
+    Finds the final anchor voxel to block in the exposed direction
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param seed The chosen seed for the key.
+    @param normal The direction which the VoxelPair blocks.
+    @return The final anchor piece for the key.
+
+*/
 Voxel finalAnchor(CompFab::VoxelGrid * voxel_list, Voxel seed, VoxelPair blocks, Voxel normal) {
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
@@ -519,6 +661,17 @@ Voxel finalAnchor(CompFab::VoxelGrid * voxel_list, Voxel seed, VoxelPair blocks,
     }
 }
 
+/**
+    Expands a piece to have at least num_voxel voxels in it.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param scores An AccessibilityStruct representing the current accesibility scores of the puzzle.
+    @param key The piece being expanded.
+    @param anchors The anchor voxels which should not be added to the piece.
+    @param num_voxels The total number of voxels which should be in the piece.
+    @param normal The direction the piece is being removed.
+    @return An updated list of voxels that belong to this piece.
+*/
 std::vector<Voxel> expandPiece( CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> key, std::vector<Voxel> anchors, int num_voxels, Voxel normal) {
     if (debug) {
         std::cout << "in expandPiece" << std::endl;
@@ -649,6 +802,13 @@ std::vector<Voxel> expandPiece( CompFab::VoxelGrid * voxel_list, AccessibilityGr
     return key;
 }
 
+/**
+    Verifies that the remainder is simply connected, i.e. all voxels can be reached from a randomly chosen voxel in the remainder.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param piece The piece being verified.
+    @return true if the piece is connected, false otherwise.
+*/
 bool verifyPiece( CompFab::VoxelGrid * voxel_list, std::vector<Voxel> piece) {
     if (debug) {
         std::cout << "in verifyPiece" << std::endl;
@@ -727,6 +887,14 @@ bool verifyPiece( CompFab::VoxelGrid * voxel_list, std::vector<Voxel> piece) {
     return result;
 }
 
+/**
+    Finds the normal direction from which to remove the next piece.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param voxel The voxel who's normal direction we're finding
+    @param piece The previous piece in the puzzle.
+    @return The direction from which the piece will be removed.
+*/
 Voxel findNormalDirection( CompFab::VoxelGrid * voxel_list, Voxel voxel, std::vector<Voxel> piece) {
     if (debug) {
         std::cout << "in findNormalDirection" << std::endl;
@@ -764,8 +932,24 @@ Voxel findNormalDirection( CompFab::VoxelGrid * voxel_list, Voxel voxel, std::ve
     }
 } 
 
+/**
+    A sorting function for std::sort for the VoxelSort class.
+
+    @param i The VoxelSort being compared.
+    @param j The other VoxelSort being compared.
+    @return true if i's accessibility score is less than j's, false otherwise.
+*/
 bool voxelSortSorter(VoxelSort i, VoxelSort j) { return (i.score < j.score); }
 
+/**
+    Sorts the potential seeds for a piece by their accessibility scores.
+    
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param scores An AccessibilityStruct representing the current accesibility scores of the puzzle.
+    @param seeds A list of potential seeds for a piece.
+    @param piece The previous piece.
+    @return A list of potential seeds sorted by their accessibility scores.
+*/
 std::vector<Voxel> seedSorter(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> seeds, std::vector<Voxel> piece) {
     if (debug) {
         std::cout << "in seedSorter" << std::endl;
@@ -829,6 +1013,15 @@ std::vector<Voxel> seedSorter(CompFab::VoxelGrid * voxel_list, AccessibilityGrid
     return finalVoxels;
 }
 
+/**
+    Finds potential seeds for the next piece.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param scores An AccessibilityStruct representing the current accesibility scores of the puzzle.
+    @param piece The previous piece.
+    @param perpendicular The directions from which the next piece cannot be removed.
+    @return A list of potential seeds for the next piece.
+*/
 std::vector<Voxel> findCandidateSeeds(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> piece, Voxel perpendicular) {
     if (debug) {
         std::cout << "in findCandidateSeeds" << std::endl;
@@ -931,6 +1124,13 @@ std::vector<Voxel> findCandidateSeeds(CompFab::VoxelGrid * voxel_list, Accessibi
     }
 }
 
+/**
+    Finds teh shorest path from one voxel to another.
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param start The voxel the path starts from.
+    @param goal The voxel to find.
+    @return The path from start voxel to goal voxel.
+*/
 std::vector<Voxel> shortestPathTwo(CompFab::VoxelGrid * voxel_list, Voxel start, Voxel goal) {
     if (debug) {
         std::cout << "in shortestPathTwo" << std::endl;
@@ -981,6 +1181,16 @@ std::vector<Voxel> shortestPathTwo(CompFab::VoxelGrid * voxel_list, Voxel start,
     return shortest_path;
 }
 
+/**
+    From a list of potential seed voxels, creates the initial design of a potential piece.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param scores An AccessibilityStruct representing the current accesibility scores of the puzzle.
+    @param prevPiece The previous piece.
+    @param candidates A list of potential seeds for the next piece.
+    @param index An integer pointer that gets set to the index of the chosen candidate.
+    @return A list containing the initial construction of the next piece.
+*/
 std::vector<Voxel> createInitialPiece(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> prevPiece, std::vector<Voxel> candidates, int * index) {
     if (debug) {
         std::cout << "in createInitialPiece" << std::endl;
@@ -1096,6 +1306,20 @@ std::vector<Voxel> createInitialPiece(CompFab::VoxelGrid * voxel_list, Accessibi
     return bestChoice;
 }
 
+/**
+    Finds a blocker for the next piece in direction toBlock
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param scores An AccessibilityStruct representing the current accesibility scores of the puzzle.
+    @param seed A seed for the next piece.
+    @param toBlock The direction that must be blocked.
+    @param normal The direction the piece is being released in.
+    @param nb_one The number of blocking pairs to find.
+    @param nb_two The number of blocking pairs to choose amongst.
+    @param anchor A Voxel pointer that gets set to the blocker to be an anchor later on.
+    @param anchorList A list of anchors which any path finding is not allowed to go through.
+    @return An update of the piece blocked in the direction toBlock.
+*/
 std::vector<Voxel>  bfsTwo(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, Voxel seed, Voxel toBlock, Voxel normal, int nb_one, int nb_two, Voxel * anchor, std::vector<Voxel> anchorList){
     if (debug) {
         std::cout << "in bfsTwo" << std::endl;
@@ -1230,6 +1454,21 @@ std::vector<Voxel>  bfsTwo(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * 
     return bestPiece;
 }
 
+/**
+    Ensures that the piece isn't mobile in a direction.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param scores An AccessibilityStruct representing the current accesibility scores of the puzzle.
+    @param prevPiece The previous piece.
+    @param currentPiece The piece currently being built.
+    @param prevPieceId The value which voxel_list->(x,y,z) is set to for the previous piece.
+    @param dir The direction for which we're checking mobility.
+    @param normal The direction the current piece is being removed in.
+    @param prevNormal The direction the previous piece was removed in.
+    @param anchor A Voxel pointer which gets set to the anchor for this direction.
+    @param anchorList A list of anchors which the piece cannot travel through.
+    @return An updated version of the current piece, only changed if it was not blocked in direction dir.
+*/
 std::vector<Voxel> mobilityCheck(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> prevPiece, std::vector<Voxel> currentPiece, int prevPieceId, Voxel dir, Voxel normal, Voxel prevNormal, Voxel * anchor, std::vector<Voxel> anchorList) {
     if (debug) {
         std::cout << "checking mobility in dir " << dir.toString() << std::endl;
@@ -1304,6 +1543,18 @@ std::vector<Voxel> mobilityCheck(CompFab::VoxelGrid * voxel_list, AccessibilityG
     return currentPiece;
 }
 
+/**
+    Ensures the piece is only mobile in one direction.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param scores An AccessibilityStruct representing the current accesibility scores of the puzzle.
+    @param prevPiece The previous piece.
+    @param currentPiece The piece which is being checked.
+    @param prevPieceId The value which voxel_list->(x,y,z) is set to for the previous piece.
+    @param prevNormal The direction the previous piece was removed in.
+    @param theAnchors A pointer to a voxel vector that gets updated with the voxels that cannot be added to this piece.
+    @return An udpated version of the piece that is only mobile in one direction.
+*/
 std::vector<Voxel> ensureInterlocking(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> prevPiece, std::vector<Voxel> currentPiece, int prevPieceId, Voxel prevNormal, std::vector<Voxel> * theAnchors) {
     if (debug) {
         std::cout << "in ensureInterlocking" << std::endl;
@@ -1366,6 +1617,14 @@ std::vector<Voxel> ensureInterlocking(CompFab::VoxelGrid * voxel_list, Accessibi
     return currentPiece;
 }
 
+/**
+    Finds the shortest path from a voxel to another piece.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param start The voxel the path starts on.
+    @param goals The piece we're finding a path to.
+    @return The path from voxel start to a piece.
+*/
 std::vector<Voxel> shortestPathThree(CompFab::VoxelGrid * voxel_list, Voxel start, std::vector<Voxel> goals) {
     if (debug) {
         std::cout << "in shortestPathThree" << std::endl;
@@ -1428,9 +1687,15 @@ std::vector<Voxel> shortestPathThree(CompFab::VoxelGrid * voxel_list, Voxel star
     return shortest_path;
 }
 
+/**
+    Ensures that a piece is connected to itself.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param piece The piece being checking.
+    @param normal The direction the piece is being removed in.
+    @return Updates the piece if it's not connected, otherwise leave it alone.
+*/
 std::vector<Voxel> ensurePieceConnectivity(CompFab::VoxelGrid * voxel_list, std::vector<Voxel> piece, Voxel normal) {
-    
-    /* ENSURE CONNECTIVITY AMONGST VOXELS IN THE PIECE */
     if (debug) {
         std::cout << "in ensurePieceConnectivity" << std::endl;
         std::cout << "piece is: " << std::endl;

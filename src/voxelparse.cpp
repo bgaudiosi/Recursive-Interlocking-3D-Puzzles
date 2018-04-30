@@ -6,6 +6,13 @@
 #include <iomanip>
 #include "../include/voxelparse.h"
 
+/**
+    Generates an MTL file.
+
+    @param filename The filename to write.
+    @param num_colors The number of colors to generate.
+    @return 1 if success, 0 otherwise.
+*/
 int generateMtl( std::string filename, uint8_t num_colors) {
     std::srand(time(0));
     std::ofstream out_mtl;
@@ -91,6 +98,15 @@ int generateMtl( std::string filename, uint8_t num_colors) {
     return 1;
 }
 
+/**
+    Generates an OBJ file for the puzzle.
+    
+    @param filename The filename to write.
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param num_partitions The number of puzzle pieces.
+    @param scale Scales the size of the puzzle.
+    @return 1 if success, 0 otherwise.
+*/
 int generateObj(std::string filename, CompFab::VoxelGrid * voxel_list, uint8_t num_partitions, double scale) {
     std::ofstream out(filename + ".obj");
     if(!out.good()){
@@ -193,21 +209,65 @@ int generateObj(std::string filename, CompFab::VoxelGrid * voxel_list, uint8_t n
                         partition_vectors[p].append("v " + next_i.str() + " " + first_j.str() + " " + next_k.str() + "\n");
                         partition_vectors[p].append("v " + next_i.str() + " " + next_j.str() + " " + next_k.str() + "\n");
 
-                        // Add faces
                         /*
-                        if ((i > 0 && voxel_list->isInside(i-1, j, k) != (p+1) && voxel_list->isInside(i-1, j, k) != 0)) {
+                        // Add faces
+                        if (i == 0 || voxel_list->isInside(i-1, j, k) != (p+1)) {
+                            partition_faces[p].append("f " + std::to_string(count + 4) + "//" + "1 " +
+                                                             std::to_string(count + 6) + "//" + "1 " +
+                                                             std::to_string(count + 7) + "//" + "1" + "\n");
+                            partition_faces[p].append("f " + std::to_string(count + 4) + "//" + "1 " +
+                                                             std::to_string(count + 7) + "//" + "1 " +
+                                                             std::to_string(count + 5) + "//" + "1" + "\n");
+                            //count++;
                         }
-                        if ((i < nx-1 && voxel_list->isInside(i+1, j, k) != (p+1) && voxel_list->isInside(i+1, j, k) != 0)) {
+                        if (i == nx-1 || voxel_list->isInside(i+1, j, k) != (p+1)) {
+                            partition_faces[p].append("f " + std::to_string(count + 0) + "//" + "2 " +
+                                                             std::to_string(count + 3) + "//" + "2 " +
+                                                             std::to_string(count + 2) + "//" + "2" + "\n");
+                            partition_faces[p].append("f " + std::to_string(count + 0) + "//" + "2 " +
+                                                             std::to_string(count + 1) + "//" + "2 " +
+                                                             std::to_string(count + 3) + "//" + "2" + "\n");
+                            //count++;
                         }
-                        if ((j > 0 && voxel_list->isInside(i, j-1, k) != (p+1) && voxel_list->isInside(i, j-1, k) != 0)) {
+                        if (j == 0 || voxel_list->isInside(i, j-1, k) != (p+1)) {
+                            partition_faces[p].append("f " + std::to_string(count + 2) + "//" + "3 " +
+                                                             std::to_string(count + 7) + "//" + "3 " +
+                                                             std::to_string(count + 6) + "//" + "3" + "\n");
+                            partition_faces[p].append("f " + std::to_string(count + 2) + "//" + "3 " +
+                                                             std::to_string(count + 3) + "//" + "3 " +
+                                                             std::to_string(count + 7) + "//" + "3" + "\n");
+                            //count++;
                         }
-                        if ((j < ny-1 && voxel_list->isInside(i, j+1, k) != (p+1) && voxel_list->isInside(i, j+1, k) != 0)) {
+                        if (j == ny-1 || voxel_list->isInside(i, j+1, k) != (p+1)) {
+                            partition_faces[p].append("f " + std::to_string(count + 0) + "//" + "4 " +
+                                                             std::to_string(count + 4) + "//" + "4 " +
+                                                             std::to_string(count + 5) + "//" + "4" + "\n");
+                            partition_faces[p].append("f " + std::to_string(count + 0) + "//" + "4 " +
+                                                             std::to_string(count + 5) + "//" + "4 " +
+                                                             std::to_string(count + 1) + "//" + "4" + "\n");
+                            //count++;
                         }
-                        if ((k > 0 && voxel_list->isInside(i, j, k-1) != (p+1) && voxel_list->isInside(i, j, k-1) != 0)) {
+                        if (k == 0 || voxel_list->isInside(i, j, k-1) != (p+1)) {
+                            partition_faces[p].append("f " + std::to_string(count + 1) + "//" + "5 " +
+                                                             std::to_string(count + 5) + "//" + "5 " +
+                                                             std::to_string(count + 7) + "//" + "5" + "\n");
+                            partition_faces[p].append("f " + std::to_string(count + 1) + "//" + "5 " +
+                                                             std::to_string(count + 7) + "//" + "5 " +
+                                                             std::to_string(count + 3) + "//" + "5" + "\n");
+                            //count++;
                         }
-                        if ((k < nz-1 && voxel_list->isInside(i, j, k+1) != (p+1) && voxel_list->isInside(i, j, k+1) != 0)) {
-                        } 
+                        if (k == nz-1 || voxel_list->isInside(i, j, k+1) != (p+1)) {
+                           partition_faces[p].append("f " + std::to_string(count + 0) + "//" + "6 " +
+                                                             std::to_string(count + 6) + "//" + "6 " +
+                                                             std::to_string(count + 4) + "//" + "6" + "\n");
+                            partition_faces[p].append("f " + std::to_string(count + 0) + "//" + "6 "  +
+                                                             std::to_string(count + 2) + "//" + "6 "  +
+                                                             std::to_string(count + 6) + "//" + "6" + "\n");
+                            //count++;
+                        }
+                        count += 8;
                         */
+                        
                         partition_faces[p].append("f " + std::to_string(count + 4) + "//" + "1 " +
                                                          std::to_string(count + 6) + "//" + "1 " +
                                                          std::to_string(count + 7) + "//" + "1" + "\n");
@@ -244,7 +304,9 @@ int generateObj(std::string filename, CompFab::VoxelGrid * voxel_list, uint8_t n
                         partition_faces[p].append("f " + std::to_string(count + 0) + "//" + "6 "  +
                                                          std::to_string(count + 2) + "//" + "6 "  +
                                                          std::to_string(count + 6) + "//" + "6" + "\n");
+                        
                         count += 8;
+                        
                     }
                 }
             }

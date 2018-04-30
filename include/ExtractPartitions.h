@@ -27,7 +27,7 @@ inline bool operator!=(const Voxel& a, const Voxel& b) { return !(a == b); }
 
 class VoxelPair {
     public:
-        VoxelPair( Voxel blocker_vox, double blocker_score, Voxel blockee_vox, double blockee_score);
+        VoxelPair( Voxel blockerVox, double blockerScore, Voxel blockeeVox, double blockeeScore);
         Voxel blocker;
         double blocker_accessibility;
 
