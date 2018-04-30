@@ -1,3 +1,11 @@
+/**
+    CS591-W1 Final Project
+    voxelparse.cpp
+    Purpose: For creating OBJ/MTL files for a puzzle.
+
+    @author Ben Gaudiosi
+    @version 1.0 5/01/2018 
+*/
 #include <iostream>
 #include <fstream>
 #include <sstream>

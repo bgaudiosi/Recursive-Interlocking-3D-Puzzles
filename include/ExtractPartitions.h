@@ -1,3 +1,11 @@
+/**
+    CS591-W1 Final Project
+    ExtractPartitions.h
+    Purpose: Headers for generating the partitions of a given voxel list
+
+    @author Ben Gaudiosi
+    @version 1.0 5/01/2018 
+*/
 #include "CompFab.h"
 #include <vector>
 #include <tuple>

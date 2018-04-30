@@ -1,3 +1,12 @@
+/**
+    CS591-W1 Final Project
+    main.cpp
+    Purpose: The main directive for generating a puzzle.
+
+    @author Ben Gaudiosi
+    @version 1.0 5/01/2018 
+*/
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -25,7 +34,7 @@ int main(int argc, char **argv)
     std::string filename(argv[2]);
 
     //CompFab::VoxelGrid * voxel_list = objToVoxelGrid(argv[1], dim);
-    
+    ///*
     CompFab::Vec3 start = CompFab::Vec3(0.0, 0.0, 0.0);
     CompFab::VoxelGrid * voxel_list = new CompFab::VoxelGrid(start, dim, dim, dim, 1.0);
     for (int i = 0; i<dim; i++) {
@@ -35,7 +44,7 @@ int main(int argc, char **argv)
             }
         }
     }
-    
+    //*/
     
     std::srand(time(0));
     
@@ -95,7 +104,8 @@ int main(int argc, char **argv)
         voxel_list->isInside(key[i].x, key[i].y, key[i].z) = 2;
     }
     
-    
+    std::cout<< "Key is " << std::endl;
+    printList(key);
     
     std::vector<Voxel> candidates;
     std::vector<Voxel> prevPiece = key;
@@ -170,6 +180,8 @@ int main(int argc, char **argv)
             voxel_list->isInside(nextPiece[i].x, nextPiece[i].y, nextPiece[i].z) = p;
         }
         std::cout << "Piece " << std::to_string(p-1) << " successfully made!" << std::endl;
+        std::cout << "Piece is: " << std::endl;
+        printList(nextPiece);
         normal_list.push_back(nextNormal);
         prevNormal = nextNormal;
         prevPiece = nextPiece;
