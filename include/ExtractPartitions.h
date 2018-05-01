@@ -69,7 +69,7 @@ class VoxelSort {
 void printList(std::vector<Voxel> list);
 std::vector<Voxel> findSeeds( CompFab::VoxelGrid * voxel_list );
 unsigned int countNeighbors( CompFab::VoxelGrid * voxel_list, Voxel voxel);
-AccessibilityGrid * accessibilityScores( CompFab::VoxelGrid * voxel_list, double alpha, unsigned int recurse);
+AccessibilityGrid * accessibilityScores( CompFab::VoxelGrid * voxel_list, double alpha, unsigned int recurse, int pieceId);
 Voxel findNormal( CompFab::VoxelGrid * voxel_list, Voxel voxel, Voxel bad_normal);
 std::vector<VoxelPair>  bfs(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, Voxel seed, Voxel normal, int nb_one, int nb_two);
 std::vector<Voxel> shortestPath(CompFab::VoxelGrid * voxel_list, Voxel seed, VoxelPair goal, std::vector<Voxel> anchors);
@@ -91,3 +91,4 @@ std::vector<Voxel> createInitialPiece(CompFab::VoxelGrid * voxel_list, Accessibi
 std::vector<Voxel> ensureInterlocking(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> prevPiece, std::vector<Voxel> currentPiece, int prevPieceId, Voxel prevNormal, std::vector<Voxel> * theAnchors);
 std::vector<Voxel> bfsTwo(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, Voxel seed, Voxel toBlock, Voxel normal, int nb_one, int nb_two, Voxel * anchor, std::vector<Voxel> anchorList);
 std::vector<Voxel> ensurePieceConnectivity(CompFab::VoxelGrid * voxel_list, std::vector<Voxel> piece, Voxel normal);
+std::vector<Voxel> partitionPiece(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> piece, int numPartition, int pieceSize);

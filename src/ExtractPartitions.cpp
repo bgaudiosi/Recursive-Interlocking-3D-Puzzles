@@ -16,7 +16,7 @@
 #include "../include/ExtractPartitions.h"
 #include "../include/CompFab.h"
 
-bool debug = true;
+bool debug = false;
 
 /**
     Blank constructor for the Voxel class. Generates a voxel at the origin.
@@ -199,39 +199,39 @@ std::vector<Voxel> findSeeds( CompFab::VoxelGrid * voxel_list ) {
     @param voxel_list A VoxelGrid representing the current state of the puzzle.
     @return The neighbors of the voxel.
 */
-std::vector<Voxel> getNeighbors(Voxel voxel, CompFab::VoxelGrid * voxel_list) {
+std::vector<Voxel> getNeighbors(Voxel voxel, CompFab::VoxelGrid * voxel_list, int pieceId) {
     std::vector<Voxel> neighbors;
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
     int nz = voxel_list->m_dimZ;
     
     if ( voxel.x != 0 ) {
-        if (voxel_list->isInside(voxel.x-1,voxel.y,voxel.z) == 1) {
+        if (voxel_list->isInside(voxel.x-1,voxel.y,voxel.z) == pieceId) {
             neighbors.push_back(Voxel(voxel.x-1,voxel.y,voxel.z));
         }
     }   
     if ( voxel.x != nx-1 ) {
-        if (voxel_list->isInside(voxel.x+1,voxel.y,voxel.z) == 1) {
+        if (voxel_list->isInside(voxel.x+1,voxel.y,voxel.z) == pieceId) {
             neighbors.push_back(Voxel(voxel.x+1,voxel.y,voxel.z));
         }
     }   
     if (voxel.y != 0) {
-        if (voxel_list->isInside(voxel.x,voxel.y-1,voxel.z) == 1) {
+        if (voxel_list->isInside(voxel.x,voxel.y-1,voxel.z) == pieceId) {
             neighbors.push_back(Voxel(voxel.x,voxel.y-1,voxel.z));
         }
     }   
     if (voxel.y != ny-1) {
-        if (voxel_list->isInside(voxel.x,voxel.y+1,voxel.z) == 1) {
+        if (voxel_list->isInside(voxel.x,voxel.y+1,voxel.z) == pieceId) {
             neighbors.push_back(Voxel(voxel.x,voxel.y+1,voxel.z));
         }
     }   
     if (voxel.z != 0) {
-        if (voxel_list->isInside(voxel.x,voxel.y,voxel.z-1) == 1) {
+        if (voxel_list->isInside(voxel.x,voxel.y,voxel.z-1) == pieceId) {
             neighbors.push_back(Voxel(voxel.x,voxel.y,voxel.z-1));
         }
     }   
     if (voxel.z != nz-1) {
-        if (voxel_list->isInside(voxel.x,voxel.y,voxel.z+1) == 1) {
+        if (voxel_list->isInside(voxel.x,voxel.y,voxel.z+1) == pieceId) {
             neighbors.push_back(Voxel(voxel.x,voxel.y,voxel.z+1));
         }
     }
@@ -244,9 +244,10 @@ std::vector<Voxel> getNeighbors(Voxel voxel, CompFab::VoxelGrid * voxel_list) {
     @param voxel_list A VoxelGrid representing the current state of the puzzle.
     @param alpha A double used as a param for how to generate the scores.
     @param recurse How many layers of recursion to perform in score generation.
+    @param pieceId The id of the piece we are scoring. Is usually 1.
     @return The accessiblity scores of each voxel in the form of an AccessibilityGrid.
 */
-AccessibilityGrid * accessibilityScores( CompFab::VoxelGrid * voxel_list, double alpha, unsigned int recurse) {
+AccessibilityGrid * accessibilityScores( CompFab::VoxelGrid * voxel_list, double alpha, unsigned int recurse, int pieceId) {
     int nx = voxel_list->m_dimX;
     int ny = voxel_list->m_dimY;
     int nz = voxel_list->m_dimZ;
@@ -256,7 +257,7 @@ AccessibilityGrid * accessibilityScores( CompFab::VoxelGrid * voxel_list, double
         for (int i = 0; i < nx; i++) {
             for (int j = 0; j < ny; j++) {
                 for (int k = 0; k < nz; k++) {
-                    scores->score(i, j, k) = getNeighbors(Voxel(i, j, k), voxel_list).size();         
+                    scores->score(i, j, k) = getNeighbors(Voxel(i, j, k), voxel_list, pieceId).size();         
                 }
             }
         }
@@ -264,11 +265,11 @@ AccessibilityGrid * accessibilityScores( CompFab::VoxelGrid * voxel_list, double
         double current_score;
         double multiplier = pow(alpha, recurse);
         std::vector<Voxel> neighbors;
-        AccessibilityGrid * old_scores = accessibilityScores( voxel_list, alpha, recurse-1);
+        AccessibilityGrid * old_scores = accessibilityScores( voxel_list, alpha, recurse-1, pieceId);
         for (int i = 0; i < nx; i++) {
             for (int j = 0; j < ny; j++) {
                 for (int k = 0; k < nz; k++) {
-                    neighbors = getNeighbors(Voxel(i, j, k), voxel_list);
+                    neighbors = getNeighbors(Voxel(i, j, k), voxel_list, pieceId);
                     current_score = 0;
                     for (int n = 0; n < neighbors.size(); n++) {
                         current_score += old_scores->score(neighbors[n].x, neighbors[n].y, neighbors[n].z);
@@ -385,7 +386,7 @@ std::vector<VoxelPair> bfs(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * 
             potentials.push_back(VoxelPair(blocker, scores->score(blocker.x, blocker.y, blocker.z), blockee, scores->score(blockee.x, blockee.y, blockee.z)));
         }
         queue.pop_front();
-        neighbors = getNeighbors(blockee, voxel_list);
+        neighbors = getNeighbors(blockee, voxel_list, 1);
         for (int i = 0; i < neighbors.size(); i++) {
             if ( !visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] ) {
                 visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] = true;
@@ -402,7 +403,7 @@ std::vector<VoxelPair> bfs(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * 
     for (int i = 0; i< potentials.size() && i < nb_two; i++) {
         accessible.push_back(potentials[i]);
     }
-
+    delete[] visited;
     return accessible;
 }
 
@@ -480,7 +481,7 @@ std::vector<Voxel> shortestPath(CompFab::VoxelGrid * voxel_list, Voxel seed, Vox
         }
          
         queue.pop_front();
-        neighbors = getNeighbors(current.back(), voxel_list);
+        neighbors = getNeighbors(current.back(), voxel_list, 1);
         if (debug) {
             std::cout << "neighbors of " << current.back().toString() << ": " << std::endl;
             printList(neighbors);
@@ -516,7 +517,7 @@ std::vector<Voxel> shortestPath(CompFab::VoxelGrid * voxel_list, Voxel seed, Vox
     }
     // Now... make sure that piece is connected after adding things. Otherwise need more path finding.
     //final_path = ensurePieceConnectivity(voxel_list, final_path, direction);
-    
+    delete[] visited;
     return final_path;
 }
 
@@ -714,7 +715,7 @@ std::vector<Voxel> expandPiece( CompFab::VoxelGrid * voxel_list, AccessibilityGr
     std::vector<Voxel> tempPiece;
     while (count < num_voxels) {
         for (int i = 0; i< key.size(); i++) {
-            neighbors = getNeighbors(key[i], voxel_list);
+            neighbors = getNeighbors(key[i], voxel_list, 1);
             for (int j = 0; j < neighbors.size(); j++) {
                 if ( !visited[neighbors[j].z*nx*ny + neighbors[j].y*ny + neighbors[j].x] ) {
                     visited[neighbors[j].z*nx*ny + neighbors[j].y*ny + neighbors[j].x] = true;
@@ -863,7 +864,7 @@ bool verifyPiece( CompFab::VoxelGrid * voxel_list, std::vector<Voxel> piece) {
     while (!queue.empty()) {
         current = queue.front();
         queue.pop_front();
-        neighbors = getNeighbors(current, voxel_list);
+        neighbors = getNeighbors(current, voxel_list, 1);
         for (int i = 0; i < neighbors.size(); i++) {
             if ( !visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] ) {
                 visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] = true;
@@ -1165,7 +1166,7 @@ std::vector<Voxel> shortestPathTwo(CompFab::VoxelGrid * voxel_list, Voxel start,
         }
 
         queue.pop_front();
-        neighbors = getNeighbors(current.back(), voxel_list);
+        neighbors = getNeighbors(current.back(), voxel_list, 1);
         for (int i = 0; i < neighbors.size(); i++) {
             if ( !visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] ) {
                 visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] = true;
@@ -1357,7 +1358,7 @@ std::vector<Voxel>  bfsTwo(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * 
             potentials.push_back(VoxelPair(blocker, scores->score(blocker.x, blocker.y, blocker.z), blockee, scores->score(blockee.x, blockee.y, blockee.z)));
         }
         queue.pop_front();
-        neighbors = getNeighbors(blockee, voxel_list);
+        neighbors = getNeighbors(blockee, voxel_list, 1);
         for (int i = 0; i < neighbors.size(); i++) {
             if ( !visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] ) {
                 visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] = true;
@@ -1403,7 +1404,7 @@ std::vector<Voxel>  bfsTwo(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * 
         while (!queue.empty()) {
             current = queue.front();
             queue.pop_front();
-            neighbors = getNeighbors(current, voxel_list);
+            neighbors = getNeighbors(current, voxel_list, 1);
             for (int k = 0; k < neighbors.size(); k++) {
                 if ( !visited[ neighbors[k].z*(nx*ny) + neighbors[k].y*ny + neighbors[k].x ] ) {
                     visited[ neighbors[k].z*(nx*ny) + neighbors[k].y*ny + neighbors[k].x ] = true;
@@ -1671,7 +1672,7 @@ std::vector<Voxel> shortestPathThree(CompFab::VoxelGrid * voxel_list, Voxel star
         }
 
         queue.pop_front();
-        neighbors = getNeighbors(current.back(), voxel_list);
+        neighbors = getNeighbors(current.back(), voxel_list, 1);
         for (int i = 0; i < neighbors.size(); i++) {
             if ( !visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] ) {
                 visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] = true;
@@ -1742,7 +1743,7 @@ std::vector<Voxel> ensurePieceConnectivity(CompFab::VoxelGrid * voxel_list, std:
             current = newQueue.front();
 
             newQueue.pop_front();
-            neighbors = getNeighbors(current, voxel_list);
+            neighbors = getNeighbors(current, voxel_list, 1);
             if (debug) {
                 std::cout << "current is " << current.toString() << ", it's neighbors are:" << std::endl;
                 printList(neighbors);
@@ -1822,4 +1823,144 @@ std::vector<Voxel> ensurePieceConnectivity(CompFab::VoxelGrid * voxel_list, std:
         std::cout << "escaped ensurePieceConnectivity" << std::endl;
     }
     return piece;
+}
+
+/**
+    Ensures that a piece is connected to itself during partition process.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param piece The piece being partitioned.
+    @param pieceId The ID of the piece as it's set to in voxel_list
+    @return true if the piece is connected, false otherwise.
+*/
+bool checkPieceConnectivity(CompFab::VoxelGrid * voxel_list, std::vector<Voxel> piece, int pieceId) {
+    if (debug) {
+        std::cout << "in checkPieceConnectivity" << std::endl;
+    }
+    bool connected = true;
+    int nx = voxel_list->m_dimX;
+    int ny = voxel_list->m_dimY;
+    int nz = voxel_list->m_dimZ;
+    int size = nx*ny*nz;
+    
+    bool *visited = new bool[size];
+    for (int i = 0; i < size; i++) {
+        visited[i] = false;
+    }
+    std::list<Voxel> queue;
+    std::vector<Voxel> neighbors;
+    Voxel current;
+    
+    Voxel start = Voxel(-1,-1,-1);
+    for (int i = 0; i < piece.size(); i++) {
+        if (voxel_list->isInside(piece[i].x, piece[i].y, piece[i].z) == pieceId) {
+            start = piece[i];
+            break;
+        }
+    }
+    if (start == Voxel(-1,-1,-1)) {
+        std::cout << "Error in checkPieceConnectivity" << std::endl;
+    }
+            
+    //Mark the current node as visited and enqueue it 
+    visited[start.z*(nx*ny) + start.y*ny + start.x] = true;
+    queue.push_back(start);
+
+    while ( !queue.empty() ) {
+        current = queue.front();
+        queue.pop_front();
+        neighbors = getNeighbors(current, voxel_list, pieceId);
+        for (int i = 0; i < neighbors.size(); i++) {
+            if ( !visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] ) {
+                visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] = true;
+                queue.push_back(neighbors[i]);
+            }
+        }
+    }
+    for (int i = 0; i < piece.size(); i++) {
+        if (voxel_list->isInside(piece[i].x, piece[i].y, piece[i].z) == pieceId && !visited[piece[i].z*(ny*nx) + piece[i].y*ny + piece[i].x]) {
+            connected = false;
+            break;
+        }
+    }
+    return connected;
+}
+
+/**
+    Partitions a piece into 2 pieces.
+
+    @param voxel_list A VoxelGrid representing the current state of the puzzle.
+    @param scores An AccessibilityStruct representing the current accesibility scores of the puzzle.
+    @param piece The piece being partitioned.
+    @param numPartition The piece ID as set in voxel_list
+    @param pieceSize The size of the partition
+    @return The partitioned piece.
+*/
+std::vector<Voxel> partitionPiece(CompFab::VoxelGrid * voxel_list, AccessibilityGrid * scores, std::vector<Voxel> piece, int numPartition, int pieceSize) {
+    //if (debug) {
+        std::cout << "in partitionPiece" << std::endl;
+        std::cout << "piece size is " << std::to_string(pieceSize) << std::endl;
+    //}
+    int nx = voxel_list->m_dimX;
+    int ny = voxel_list->m_dimY;
+    int nz = voxel_list->m_dimZ;
+    int size = nx*ny*nz;
+    
+    //first, sort piece by accessibility
+    std::vector<VoxelSort> sorted;
+    for (int i = 0; i < piece.size(); i++) {
+        sorted.push_back(VoxelSort(piece[i], scores->score(piece[i].x, piece[i].y, piece[i].z)));
+    }
+    std::sort (sorted.begin(), sorted.end(), voxelSortSorter);
+    piece.clear();
+    for (int i = 0; i < sorted.size(); i++) {
+        piece.push_back(sorted[i].voxel);
+    }
+
+    bool *visited = new bool[size];
+    for (int i = 0; i < size; i++) {
+        visited[i] = false;
+    }
+    std::list<Voxel> queue;
+    std::vector<Voxel> neighbors;
+    Voxel current;
+
+    Voxel start = piece[0];
+    //Mark the current node as visited and enqueue it
+    visited[start.z*(nx*ny) + start.y*ny + start.x] = true;
+    queue.push_back(start);
+
+    std::vector<Voxel> partition;
+    std::vector<Voxel> temp;
+    while ( !queue.empty() ) {
+        std::cout << "partition size is " <<  std::to_string(partition.size()) << std::endl;
+        current = queue.front();
+        if (partition.size() >= pieceSize ) {
+            break;
+        }
+
+        queue.pop_front();
+        neighbors = getNeighbors(current, voxel_list, numPartition);
+        for (int i = 0; i < neighbors.size(); i++) {
+            if ( !visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] ) {
+                // Ensure adding piece doesn't disconnect the partitions
+                temp = partition;
+                temp.push_back(neighbors[i]);
+                for (int j = 0; j< temp.size(); j++) {
+                    voxel_list->isInside(temp[j].x, temp[j].y, temp[j].z) = 0;
+                }
+                if (checkPieceConnectivity(voxel_list, piece, numPartition)) {
+                    partition = temp;
+                }
+                for (int j = 0; j< temp.size(); j++) {
+                    voxel_list->isInside(temp[j].x, temp[j].y, temp[j].z) = numPartition;
+                }
+                visited[ neighbors[i].z*(nx*ny) + neighbors[i].y*ny + neighbors[i].x ] = true;
+
+                queue.push_back(neighbors[i]);
+            }
+        }
+    }
+    delete[] visited;
+    return partition;   
 }

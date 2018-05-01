@@ -33,8 +33,8 @@ int main(int argc, char **argv)
     int dim = atoi(argv[3]); //dimension of voxel grid (e.g. 32x32x32)
     std::string filename(argv[2]);
 
-    //CompFab::VoxelGrid * voxel_list = objToVoxelGrid(argv[1], dim);
-    ///*
+    CompFab::VoxelGrid * voxel_list = objToVoxelGrid(argv[1], dim);
+    /*
     CompFab::Vec3 start = CompFab::Vec3(0.0, 0.0, 0.0);
     CompFab::VoxelGrid * voxel_list = new CompFab::VoxelGrid(start, dim, dim, dim, 1.0);
     for (int i = 0; i<dim; i++) {
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
             }
         }
     }
-    //*/
+    */
     
     std::srand(time(0));
     
@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     int num_pieces = atoi(argv[4]);
     int m = num_voxels/ num_pieces;
 
-    AccessibilityGrid * scores = accessibilityScores(voxel_list, 0.1, 3);
+    AccessibilityGrid * scores = accessibilityScores(voxel_list, 0.1, 3, 1);
     std::vector<Voxel> seeds = findSeeds(voxel_list);
     
     int seed_choice;
@@ -119,16 +119,21 @@ int main(int argc, char **argv)
     int index;
     std::cout << "entering the loop" << std::endl;
     int iterations;
-    bool recurse = true;
+    bool recurse = false;
+    std::cout << "num pieces is " << std::to_string(num_pieces) << std::endl;
     if (recurse) {
-        iterations = num_pieces;
+        iterations = num_pieces-2;
     } else {
-        iterations = num_pieces - 2 / 3;
-        m *= 3;
+        std::cout << "in here?" << std::endl;
+        iterations = (int)((num_pieces - 2) / 2);
+        m *= 2;
     }
-    for (int p = 3; p <= iterations; p++) {
+    std::cout << "number of iterations is " << std::to_string(iterations) << std::endl;
+    int p;
+    for (int i = 0; i < iterations; i++) {
+        p = i+3;
         std::cout << "On piece " << std::to_string(p-1) << std::endl;
-        scores = accessibilityScores(voxel_list, 0.1, 3);
+        scores = accessibilityScores(voxel_list, 0.1, 3, 1);
         candidates = findCandidateSeeds(voxel_list, scores, prevPiece, prevNormal);
         nextPiece.clear();
         while (nextPiece.size() < (int)(0.75*m) ) {
@@ -185,6 +190,37 @@ int main(int argc, char **argv)
         normal_list.push_back(nextNormal);
         prevNormal = nextNormal;
         prevPiece = nextPiece;
+    }
+    std::string old = "old_" + filename;
+    generateMtl(old, 10);
+    generateObj(old, voxel_list, 10, 5.0);
+    
+    // so now, we have no piece = 1, key = 2, piece_2 = 3, piece_3 = 4
+    std::vector<Voxel> piece;
+    AccessibilityGrid * pieceScore;
+    std::vector<Voxel> partition;
+    if (!recurse) {
+        for (int p = 3; p < num_pieces; p++) {
+            piece.clear();
+            // First, find all the voxels that belong to this piece
+            for (int i = 0; i < dim; i++) {
+                for (int j = 0; j < dim; j++) {
+                    for (int k = 0; k < dim; k++) {
+                        if (voxel_list->isInside(i,j,k) == p) {
+                            piece.push_back(Voxel(i,j,k));
+                        }
+                    }
+                }
+            }
+            pieceScore = accessibilityScores(voxel_list, 0.1, 3, p);
+            // Then, grow from said piece. If adding a voxel disconnects the piece, don't add it.
+            partition = partitionPiece(voxel_list, pieceScore, piece,p, (int) m / 2 );
+            std::cout << "parition.size is " << std::to_string(partition.size()) << std::endl;
+            std::cout << "piece.size is " << std::to_string(piece.size()) << std::endl;
+            for (int i = 0; i < partition.size(); i++) {
+                voxel_list->isInside(partition[i].x, partition[i].y, partition[i].z) = num_pieces + p - 1;
+            }
+        }
     }
     
     std::cout << "Solution is: " << std::endl;
